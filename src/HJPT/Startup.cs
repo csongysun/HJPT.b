@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using HJPT.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace HJPT
 {
@@ -19,6 +21,13 @@ namespace HJPT
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
+
+
+            //if (env.IsDevelopment())
+            //{
+            //    builder.AddUserSecrets();
+            //}
+
             Configuration = builder.Build();
         }
 
@@ -27,8 +36,14 @@ namespace HJPT
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            var connection = @"Server=(localdb)\mssqllocaldb;Database=HJPTDb;Trusted_Connection=True;";
+            services.AddDbContext<HJPTContext>(options => options.UseSqlServer(connection));
+
             // Add framework services.
             services.AddMvc();
+            services.AddLogging();
+            services.AddSingleton<IUserRepository, UserRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
