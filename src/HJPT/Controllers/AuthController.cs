@@ -6,6 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using HJPT.Model;
 using Microsoft.AspNetCore.Http.Authentication;
 using HJPT.Common;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using HJPT.Options;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,24 +22,50 @@ namespace HJPT.Controllers
     public class AuthController : Controller
     {
         private IUserRepository _userRepository;
-        public AuthController(IUserRepository userRepository)
+        private ILogger _logger;
+        private readonly JwtIssuerOptions _jwtOptions;
+        private readonly JsonSerializerSettings _serializerSettings;
+
+        public AuthController(IUserRepository userRepository, ILoggerFactory loggerFactory, IOptions<JwtIssuerOptions> jwtOptions)
         {
+            _jwtOptions = jwtOptions.Value;
             _userRepository = userRepository;
+
+            _logger = loggerFactory.CreateLogger<AuthController>();
+            _serializerSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            };
         }
 
         // GET api/values/5
         [HttpPost("login")]
-        public IActionResult Login([FromBody]LoginForm user)
+        [AllowAnonymous]
+        public async Task<IActionResult> LoginAsync([FromBody]LoginForm user)
         {
-            User xuser;
+            
+            ApplicationUser xuser;
             try
             {
-                xuser = _userRepository.Login(user);
+                xuser = await _userRepository.Login(user);
             }
             catch (AuthenticationFailedException e)
             {
+                _logger.LogInformation($"Invalid username ({user.Username}) or password ({user.Password})");
                 return new BadRequestObjectResult(e.Message);
             }
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, xuser.Username),
+                new Claim(JwtRegisteredClaimNames.Jti, await _jwtOptions.JtiGenerator()),
+                new Claim(JwtRegisteredClaimNames.Iat, 
+                    _jwtOptions.IssuedAt.ToString(),
+                    ClaimValueTypes.DateTime),
+                new Claim(ClaimTypes.GroupSid, Enum.),
+                //new Claim(ClaimTypes.)
+
+            };
 
             return new JsonResult(xuser);
         }

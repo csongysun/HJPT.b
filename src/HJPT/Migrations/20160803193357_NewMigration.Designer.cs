@@ -7,7 +7,7 @@ using HJPT.Model;
 
 namespace HJPT.Migrations
 {
-    [DbContext(typeof(HJPTContext))]
+    [DbContext(typeof(HJPTDbContext))]
     [Migration("20160803193357_NewMigration")]
     partial class NewMigration
     {

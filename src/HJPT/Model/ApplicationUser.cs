@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HJPT.Model
 {
-    public class User
+    public class ApplicationUser
     {
         [DatabaseGeneratedAttribute(DatabaseGeneratedOption.Identity)]
         public int UID { get; set; }
@@ -16,7 +16,13 @@ namespace HJPT.Model
         [Required]
         public string Password { get; set; }
         public string StuID { get; set; }
+        public UserGroup Group { get; set; }
+    }
 
+    public enum UserGroup
+    {
+        Peasant = 0,
+        User = 1,
     }
 
 

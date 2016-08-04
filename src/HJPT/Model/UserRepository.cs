@@ -9,37 +9,38 @@ namespace HJPT.Model
 {
     public interface IUserRepository
     {
-        User Login(LoginForm form);
+        Task<ApplicationUser> Login(LoginForm form);
         void SignUp(SignUpForm form);
     }
 
     public class UserRepository : IUserRepository
     {
-        private HJPTContext _context;
-        public UserRepository(HJPTContext context)
+        private HJPTDbContext _context;
+        public UserRepository(HJPTDbContext context)
         {
             _context = context;
         }
 
-        public User Login(LoginForm form)
+        public Task<ApplicationUser> Login(LoginForm form)
         {
-            User user;
+            ApplicationUser user;
             try
             {
                 user = _context.Users.Single(r => r.Username == form.Username || r.Email == form.Username);
             }
             catch (InvalidOperationException e)
             {
-                throw new AuthenticationFailedException("无此用户", e);
+                return Task.FromException<ApplicationUser>(new AuthenticationFailedException("无此用户", e));
             }
-            if (form.Password != user.Password) throw new AuthenticationFailedException("密码错误");
+            if (form.Password != user.Password)
+                return Task.FromException<ApplicationUser>(new AuthenticationFailedException("密码错误"));
 
-            return user;
+            return Task.FromResult(user);
         }
 
         public void SignUp(SignUpForm form)
         {
-            var newUser = new User();
+            var newUser = new ApplicationUser();
             if (form == null || form.Username == null || form.Password == null || form.Email == null)
                 throw new AuthenticationFailedException("缺少参数");
             newUser.Username = form.Username;

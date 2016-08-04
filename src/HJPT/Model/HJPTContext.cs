@@ -4,20 +4,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace HJPT.Model
+namespace HJPT.Model  
 {
-    public class HJPTContext: DbContext
+    public class HJPTDbContext: DbContext
     {
-        public HJPTContext(DbContextOptions<HJPTContext> options) : base(options)
+        public HJPTDbContext(DbContextOptions<HJPTDbContext> options) : base(options)
         {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<User>().HasAlternateKey(a => a.Username);
-            modelBuilder.Entity<User>().HasAlternateKey(a => a.Email);
-            modelBuilder.Entity<User>().HasKey(c => c.UID);
+            modelBuilder.Entity<ApplicationUser>().HasAlternateKey(a => a.Username);
+            modelBuilder.Entity<ApplicationUser>().HasAlternateKey(a => a.Email);
+            modelBuilder.Entity<ApplicationUser>().HasKey(c => c.UID);
         }
-        public DbSet<User> Users { get; set; }
+        public DbSet<ApplicationUser> Users { get; set; }
     }
 }

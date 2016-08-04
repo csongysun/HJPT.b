@@ -7,7 +7,7 @@ using HJPT.Model;
 
 namespace HJPT.Migrations
 {
-    [DbContext(typeof(HJPTContext))]
+    [DbContext(typeof(HJPTDbContext))]
     partial class HJPTContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
