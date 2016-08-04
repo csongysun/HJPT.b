@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using HJPT.Model;
+using HJPT.Models;
 using Microsoft.AspNetCore.Http.Authentication;
 using HJPT.Common;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,6 +13,7 @@ using HJPT.Options;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -21,68 +22,52 @@ namespace HJPT.Controllers
     [Route("api/[controller]")]
     public class AuthController : Controller
     {
-        private IUserRepository _userRepository;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private ILogger _logger;
-        private readonly JwtIssuerOptions _jwtOptions;
         private readonly JsonSerializerSettings _serializerSettings;
 
-        public AuthController(IUserRepository userRepository, ILoggerFactory loggerFactory, IOptions<JwtIssuerOptions> jwtOptions)
+        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, ILoggerFactory loggerFactory)
         {
-            _jwtOptions = jwtOptions.Value;
-            _userRepository = userRepository;
+            _userManager = userManager;
+            _signInManager = signInManager;
 
-            _logger = loggerFactory.CreateLogger<AuthController>();
-            _serializerSettings = new JsonSerializerSettings
-            {
-                Formatting = Formatting.Indented
-            };
+            //_logger = loggerFactory.CreateLogger<AuthController>();
+
         }
 
         // GET api/values/5
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> LoginAsync([FromBody]LoginForm user)
+        public async Task<IActionResult> Login([FromBody]LoginForm user)
         {
+            var result = await _signInManager.PasswordSignInAsync(user.Username, user.Password, isPersistent: false, lockoutOnFailure: true);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation($"User ({user.Username}) log in");
+
+                return Json(_userManager.FindByNameAsync(user.Username));
+            }
+
+            return BadRequest();
             
-            ApplicationUser xuser;
-            try
-            {
-                xuser = await _userRepository.Login(user);
-            }
-            catch (AuthenticationFailedException e)
-            {
-                _logger.LogInformation($"Invalid username ({user.Username}) or password ({user.Password})");
-                return new BadRequestObjectResult(e.Message);
-            }
 
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, xuser.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, await _jwtOptions.JtiGenerator()),
-                new Claim(JwtRegisteredClaimNames.Iat, 
-                    _jwtOptions.IssuedAt.ToString(),
-                    ClaimValueTypes.DateTime),
-                new Claim(ClaimTypes.GroupSid, Enum.),
-                //new Claim(ClaimTypes.)
-
-            };
-
-            return new JsonResult(xuser);
         }
 
-        // POST api/auth/login
         [HttpPost("signup")]
-        public IActionResult SignUp([FromBody]SignUpForm user)
+        [AllowAnonymous]
+        public async Task<IActionResult> SignUp([FromBody]SignUpForm form)
         {
-            try
+            var user = new ApplicationUser { UserName = form.Username, Email = form.Email, PasswordHash = form.Password, StuID = form.StuID };
+            var result = await _userManager.CreateAsync(user);
+            
+            if (result.Succeeded)
             {
-                _userRepository.SignUp(user);
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                return Json(_userManager.FindByNameAsync(user.UserName));
             }
-            catch (AuthenticationFailedException e)
-            {
-                return new BadRequestObjectResult(e.Message);
-            }
-            return new OkResult();
+            return new BadRequestResult();
         }
 
     }
