@@ -32,7 +32,7 @@ namespace HJPT.Controllers
             _userManager = userManager;
             _signInManager = signInManager;
 
-            //_logger = loggerFactory.CreateLogger<AuthController>();
+            _logger = loggerFactory.CreateLogger<AuthController>();
 
         }
 
@@ -41,16 +41,17 @@ namespace HJPT.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody]LoginForm user)
         {
-            var result = await _signInManager.PasswordSignInAsync(user.Username, user.Password, isPersistent: false, lockoutOnFailure: true);
-
+            var task = _signInManager.PasswordSignInAsync(user.UserName, user.Password, isPersistent: true, lockoutOnFailure: true);
+            var result = await task;
             if (result.Succeeded)
             {
-                _logger.LogInformation($"User ({user.Username}) log in");
-
-                return Json(_userManager.FindByNameAsync(user.Username));
+                var u = await _userManager.FindByNameAsync(user.UserName);
+              //  u.
+                _logger.LogInformation($"User ({user.UserName}) log in");
+                return Json( await _userManager.FindByNameAsync(user.UserName));
             }
 
-            return BadRequest();
+            return new BadRequestObjectResult("用户名或密码错误");
             
 
         }
@@ -59,15 +60,22 @@ namespace HJPT.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> SignUp([FromBody]SignUpForm form)
         {
-            var user = new ApplicationUser { UserName = form.Username, Email = form.Email, PasswordHash = form.Password, StuID = form.StuID };
-            var result = await _userManager.CreateAsync(user);
-            
+            var user = new ApplicationUser { UserName = form.UserName, Email = form.Email, StuID = form.StuID };
+            var task = _userManager.CreateAsync(user, form.Password);
+            var result = await task;
             if (result.Succeeded)
             {
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return Json(_userManager.FindByNameAsync(user.UserName));
+                await _signInManager.SignInAsync(user);
+                return Json( await _userManager.FindByNameAsync(user.UserName));
             }
-            return new BadRequestResult();
+            return new BadRequestObjectResult(task.Result.Errors);
+        }
+
+        [HttpPost("signout/{userName}")]
+        public async Task<IActionResult> SignOut(string userName)
+        {
+            await _signInManager.SignOutAsync(userName);
+            return Json(await _userManager.FindByNameAsync("sss"));
         }
 
     }

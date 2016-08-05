@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using HJPT.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace HJPT
 {
@@ -46,9 +47,17 @@ namespace HJPT
             var connection = @"Server=(localdb)\mssqllocaldb;Database=HJPTDb;Trusted_Connection=True;";
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection));
 
-            services.AddIdentity<ApplicationUser, IdentityRole>()
+            services.AddIdentity<ApplicationUser, IdentityRole>( options => {
+                options.Password.RequiredLength = 3;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireLowercase = false;
+                //options.to
+            })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
+
+            
 
             services.AddAuthorization(options =>
             {
@@ -103,13 +112,17 @@ namespace HJPT
                 ClockSkew = TimeSpan.Zero
             };
 
-            app.UseJwtBearerAuthentication(new JwtBearerOptions {
+            app.UseIdentity().UseJwtBearerAuthentication(new JwtBearerOptions
+            {
                 AutomaticAuthenticate = true,
                 AutomaticChallenge = true,
-                TokenValidationParameters = tokenValidationParameters
+                TokenValidationParameters = tokenValidationParameters,
+                Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = ,
+                    OnTokenValidated
+                }
             });
-
-            app.UseIdentity();
 
             app.UseMvc();
         }
