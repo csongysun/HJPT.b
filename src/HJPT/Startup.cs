@@ -12,12 +12,13 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
-using HJPT.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using HJPT.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using HJPT.Options;
+using HJPT.Services;
 
 namespace HJPT
 {
@@ -48,6 +49,7 @@ namespace HJPT
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection));
 
             services.AddIdentity<ApplicationUser, IdentityRole>( options => {
+                options.Cookies.ApplicationCookie.AuthenticationScheme = "token";
                 options.Password.RequiredLength = 3;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
@@ -57,35 +59,15 @@ namespace HJPT
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            
 
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("OnlyValidUsers", policy =>
-                    {
-                        policy.RequireRole("ValidUserRole");
-                    });
-            });
+            services.AddSingleton<IBTDecodeService, BTDecodeService>();
+            services.AddOptions();
+            services.Configure<SiteOptions>(Configuration.GetSection("SiteSetting"));
 
             // Add framework services.
             services.AddLogging();
 
-            services.AddOptions();
-            var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
-            services.Configure<JwtIssuerOptions>(options =>
-            {
-                options.Issuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)];
-                options.Audience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)];
-                options.SigningCredentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
-            });
-
-            services.AddMvc(config =>
-            {
-                var policy = new AuthorizationPolicyBuilder()
-                                 .RequireAuthenticatedUser()
-                                 .Build();
-                config.Filters.Add(new AuthorizeFilter(policy));
-            });
+            services.AddMvc();
 
         }
 
@@ -95,34 +77,7 @@ namespace HJPT
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
-            var tokenValidationParameters = new TokenValidationParameters {
-
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = _signingKey,
-
-                ValidateIssuer = true,
-                ValidIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)],
-
-                ValidateAudience = true,
-                ValidAudience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
-
-                ValidateLifetime = true,
-
-                ClockSkew = TimeSpan.Zero
-            };
-
-            app.UseIdentity().UseJwtBearerAuthentication(new JwtBearerOptions
-            {
-                AutomaticAuthenticate = true,
-                AutomaticChallenge = true,
-                TokenValidationParameters = tokenValidationParameters,
-                Events = new JwtBearerEvents
-                {
-                    OnMessageReceived = ,
-                    OnTokenValidated
-                }
-            });
+            app.UseIdentity();
 
             app.UseMvc();
         }

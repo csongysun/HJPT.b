@@ -1,44 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using HJPT.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace HJPT.Controllers
 {
     [Route("api/[controller]")]
-    public class ValuesController : Controller
+    [Authorize]
+    public class UserSettingController : Controller
     {
-        // GET api/values
+        private UserManager<ApplicationUser> _userManager;
+        public UserSettingController(
+            UserManager<ApplicationUser> userManager
+            )
+        {
+            _userManager = userManager;
+        }
+
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<IActionResult> UpdatePassKey()
         {
-            return new string[] { "value1", "value2" };
+            var user = await _userManager.GetUserAsync(User);
+            user.PassKey = Guid.NewGuid().ToString();
+            await _userManager.UpdateAsync(user);
+            return Ok();
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody]string value)
-        {
-        }
-
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
     }
 }

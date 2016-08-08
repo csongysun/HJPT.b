@@ -11,8 +11,9 @@ namespace HJPT.Models
     public class ApplicationUser : IdentityUser
     {
         public string StuID { get; set; }
+        public string PassKey { get; set; }
+        public string RegIP { get; set; }
+        public string LastIP { get; set; }
 
     }
-
-
 }

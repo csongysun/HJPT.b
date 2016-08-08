@@ -9,58 +9,62 @@ using HJPT.Common;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
-using HJPT.Options;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-
-// For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
+using HJPT.Options;
 
 namespace HJPT.Controllers
 {
     [Route("api/[controller]")]
+    [Authorize]
     public class AuthController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private ILogger _logger;
         private readonly JsonSerializerSettings _serializerSettings;
+        private SiteOptions _siteOptions;
 
-        public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, ILoggerFactory loggerFactory)
+        public AuthController(
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
+            ILoggerFactory loggerFactory,
+            IOptions<SiteOptions> setting)
         {
             _userManager = userManager;
             _signInManager = signInManager;
 
-            _logger = loggerFactory.CreateLogger<AuthController>();
+            _siteOptions = setting.Value;
 
+            _logger = loggerFactory.CreateLogger<AuthController>();
         }
 
-        // GET api/values/5
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody]LoginForm user)
+        public async Task<IActionResult> Login([FromBody]LoginForm form)
         {
-            var task = _signInManager.PasswordSignInAsync(user.UserName, user.Password, isPersistent: true, lockoutOnFailure: true);
-            var result = await task;
+            var result = await _signInManager.PasswordSignInAsync(form.UserName, form.Password, isPersistent: true, lockoutOnFailure: true);
             if (result.Succeeded)
             {
-                var u = await _userManager.FindByNameAsync(user.UserName);
-              //  u.
-                _logger.LogInformation($"User ({user.UserName}) log in");
-                return Json( await _userManager.FindByNameAsync(user.UserName));
+                var u = await _userManager.FindByNameAsync(form.UserName);
+                u.LastIP = Request.Host.Host;
+                await _userManager.UpdateAsync(u);
+                _logger.LogInformation($"User ({form.UserName}) log in");
+                return Json( await _userManager.FindByNameAsync(form.UserName));
             }
 
-            return new BadRequestObjectResult("用户名或密码错误");
-            
-
+            return BadRequest("用户名或密码错误");
         }
 
         [HttpPost("signup")]
         [AllowAnonymous]
         public async Task<IActionResult> SignUp([FromBody]SignUpForm form)
         {
-            var user = new ApplicationUser { UserName = form.UserName, Email = form.Email, StuID = form.StuID };
+            if (_siteOptions.SignUp == SignUpOption.Reject)
+                return BadRequest();
+            var user = new ApplicationUser { UserName = form.UserName, Email = form.Email, StuID = form.StuID, RegIP = Request.Host.Host };
             var task = _userManager.CreateAsync(user, form.Password);
             var result = await task;
             if (result.Succeeded)
@@ -68,14 +72,41 @@ namespace HJPT.Controllers
                 await _signInManager.SignInAsync(user);
                 return Json( await _userManager.FindByNameAsync(user.UserName));
             }
-            return new BadRequestObjectResult(task.Result.Errors);
+            return BadRequest(task.Result.Errors);
         }
 
-        [HttpPost("signout/{userName}")]
-        public async Task<IActionResult> SignOut(string userName)
+        [HttpPost("signup/invite")]
+        [AllowAnonymous]
+        public async Task<IActionResult> InviteSignUp([FromBody]SignUpForm form)
         {
-            await _signInManager.SignOutAsync(userName);
-            return Json(await _userManager.FindByNameAsync("sss"));
+            if (_siteOptions.SignUp != SignUpOption.Invite || form.InviteToken == null)
+                return BadRequest();
+
+            //valitade token
+
+            return await SignUp(form);
+        }
+
+
+        [HttpGet("signout")]
+        public async Task<IActionResult> SignOut()
+        {
+            await _signInManager.SignOutAsync();
+            return Ok();
+        }
+
+        [HttpGet("get")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Get()
+        {
+            return await Task.FromResult( (IActionResult) Json(_siteOptions.SignUp));
+        }
+
+        [HttpGet("set")]
+        public async Task<IActionResult> Set()
+        {
+            _siteOptions.SignUp = SignUpOption.Open;
+            return await Task.FromResult((IActionResult)Json(_siteOptions.SignUp));
         }
 
     }
