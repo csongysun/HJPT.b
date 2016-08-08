@@ -26,15 +26,16 @@ namespace HJPT.Controllers
         {
 
 
-            var path = "Data/Torrents/abc.torrent";
+            var path = "Data/Torrents/123.torrent";
             if (form.torrent == null) return BadRequest();
-            //using (FileStream fs = System.IO.File.Create(path))
-            //{
-            //    await form.torrent.CopyToAsync(fs);
-            //    await fs.FlushAsync();
-            //}
 
             var result = _btds.DecodeTorrent(form.torrent.OpenReadStream());
+
+            using (FileStream fs = System.IO.File.Create(path))
+            {
+                await form.torrent.CopyToAsync(fs);
+                await fs.FlushAsync();
+            }
 
             return Json(result);
         }
