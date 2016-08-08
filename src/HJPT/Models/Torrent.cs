@@ -11,11 +11,10 @@ namespace HJPT.Models
         public string Name { get; set; }
         public Promotion Promotion { get; set; }
         public int Size { get; set; }
-        public string DName { get; set; }
-        public List<TorrentFile> Files { get; set; }
+        public List<TorrentSubFile> Files { get; set; }
     }
 
-    public class TorrentFile : Entity
+    public class TorrentSubFile : Entity
     {
         public string Path { get; set; }
         public int Size { get; set; }

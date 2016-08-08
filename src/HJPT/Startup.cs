@@ -60,7 +60,7 @@ namespace HJPT
                 .AddDefaultTokenProviders();
 
 
-            services.AddSingleton<IBTDecodeService, BTDecodeService>();
+           // services.AddSingleton<IBTDecodeService, TorrentService>();
             services.AddOptions();
             services.Configure<SiteOptions>(Configuration.GetSection("SiteSetting"));
 
