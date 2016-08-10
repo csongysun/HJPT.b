@@ -14,17 +14,14 @@ namespace HJPT.Test.Services
     public class BTDecodeServiceTest : TestBase
     {
 
-        private readonly ITestOutputHelper output;
-        public BTDecodeServiceTest(ITestOutputHelper output)
-        {
-            this.output = output;
-        }  
-
         [Theory]
         [InlineData("Data/Torrents/111.torrent")]
         public void TorrentInfoHash(string path)
         {
+            var bs = new BTDecodeService(new FileStream(path, FileMode.Open));
+            var torrent = bs.DecodeTorrent();
 
+            Write(torrent);
         }
 
         public class BTDecodeService : IDisposable

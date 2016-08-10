@@ -19,6 +19,7 @@ using HJPT.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using HJPT.Options;
 using HJPT.Services;
+using HJPT.Middlewares;
 
 namespace HJPT
 {
@@ -57,10 +58,11 @@ namespace HJPT
                 //options.to
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddUserManager<UserManager>()
                 .AddDefaultTokenProviders();
 
-
-           // services.AddSingleton<IBTDecodeService, TorrentService>();
+            services.AddTransient<ITrackService, TrackService>();
+            services.AddSingleton<ITorrentService, TorrentService>();
             services.AddOptions();
             services.Configure<SiteOptions>(Configuration.GetSection("SiteSetting"));
 
@@ -76,6 +78,8 @@ namespace HJPT
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
+            
+            app.UseAnnounce();
 
             app.UseIdentity();
 

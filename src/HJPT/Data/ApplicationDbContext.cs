@@ -16,6 +16,8 @@ namespace HJPT.Data
         }
 
         public DbSet<Invite> Invites { get; set; }
+        public DbSet<Torrent> Torrents { get; set; }
+        public DbSet<Peer> Peers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

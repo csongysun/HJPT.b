@@ -1,0 +1,105 @@
+{
+    "ContentType": null,
+    "Headers": {
+        "Connection": [
+            "Keep-Alive"
+        ],
+        "Accept": [
+            "*/*"
+        ],
+        "Host": [
+            "localhost"
+        ],
+        "User-Agent": [
+            "Bittorrent"
+        ],
+        "MS-ASPNETCORE-TOKEN": [
+            "2872fb4e-58f5-4c22-9a28-b2d12158dfdf"
+        ],
+        "X-Original-Proto": [
+            "http"
+        ],
+        "X-Original-For": [
+            "127.0.0.1:14951"
+        ]
+    },
+    "Path": {
+        "Value": "/api/announce/",
+        "HasValue": true
+    },
+    "Protocol": "HTTP/1.0",
+    "Query": [
+        {
+            "Key": "info_hash",
+            "Value": [
+                "%99%D7%E9%A0v%E2%C8-|%E2%F7vZ%BD\u000f%EF\u001bl%EF%B7" 
+                //99d7e9a076e2c82d7ce2f7765abd0fef1b6cefb7
+            ]
+        },
+        {
+            "Key": "peer_id",
+            "Value": [
+                "-XL0012-\u0010%C9\u001e%D4%C9E%D5EV%D3%EE%C6"
+            ]
+        },
+        {
+            "Key": "ip",
+            "Value": [
+                "192.168.1.105"
+            ]
+        },
+        {
+            "Key": "port",
+            "Value": [
+                "15000"
+            ]
+        },
+        {
+            "Key": "uploaded",
+            "Value": [
+                "0"
+            ]
+        },
+        {
+            "Key": "downloaded",
+            "Value": [
+                "0"
+            ]
+        },
+        {
+            "Key": "left",
+            "Value": [
+                "4748170699"
+            ]
+        },
+        {
+            "Key": "numwant",
+            "Value": [
+                "200"
+            ]
+        },
+        {
+            "Key": "key",
+            "Value": [
+                "10740"
+            ]
+        },
+        {
+            "Key": "compact",
+            "Value": [
+                "1"
+            ]
+        },
+        {
+            "Key": "event",
+            "Value": [
+                "started"
+            ]
+        }
+    ],
+    "QueryString": {
+        "Value": "?info_hash=%99%D7%E9%A0v%E2%C8-%7C%E2%F7vZ%BD%0F%EF%1Bl%EF%B7&peer_id=-XL0012-%10%C9%1E%D4%C9E%D5EV%D3%EE%C6&ip=192.168.1.105&port=15000&uploaded=0&downloaded=0&left=4748170699&numwant=200&key=10740&compact=1&event=started",
+        "HasValue": true
+    },
+    "Scheme": "http"
+}

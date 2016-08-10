@@ -9,7 +9,7 @@ namespace HJPT.Models
     {
         public Entity()
         {
-            Id = Guid.NewGuid().ToString();
+            Id = Guid.NewGuid().ToString().Replace("-","");
         }
         public string Id { get; set; }
     }

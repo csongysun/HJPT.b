@@ -18,23 +18,27 @@ namespace HJPT.Controllers
     public class DetailController : Controller
     {
 
+        private readonly ITorrentService _torrentService;
+        public DetailController(ITorrentService torrentService)
+        {
+            _torrentService = torrentService;
+        }
+
         public async Task<IActionResult> Upload([FromForm]UploadForm form)
         {
-            //var path = "Data/Torrents/123.torrent";
-            //if (form.torrent == null) return BadRequest();
+            if (form.torrent == null) return BadRequest();
 
-            //var result = _btds.DecodeTorrent(form.torrent.OpenReadStream());
+            var torrent = await _torrentService.SetTorrent(form.torrent.OpenReadStream());
 
-
-
-            //using (FileStream fs = System.IO.File.Create(path))
-            //{
-            //    await form.torrent.CopyToAsync(fs);
-            //    await fs.FlushAsync();
-            //}
-
-            //return Json(result);
+            await _torrentService.SaveToFile("Data/Torrents", torrent.Id);
+            
             return Ok();
+        }
+
+        [HttpGet("download/{id}")]
+        public async Task<IActionResult> DownLoad(string id)
+        {
+            return File("Data/Torrents/111.torrent", "application/x-bittorrent");
         }
 
 
