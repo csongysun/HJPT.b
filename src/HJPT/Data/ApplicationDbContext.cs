@@ -13,6 +13,7 @@ namespace HJPT.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
+            
         }
 
         public DbSet<Invite> Invites { get; set; }

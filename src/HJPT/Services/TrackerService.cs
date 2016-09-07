@@ -12,7 +12,7 @@ namespace HJPT.Services
 {
     public interface ITrackService
     {
-        Task Accept(HttpRequest req);
+        Task<string> Accept(HttpRequest req);
     }
 
     public class TrackService : ITrackService
@@ -25,7 +25,7 @@ namespace HJPT.Services
             _dbContext = dbContext;
         }
 
-        public async Task Accept(HttpRequest req)
+        public async Task<string> Accept(HttpRequest req)
         {
             //todo: check agent client 
             
@@ -39,19 +39,19 @@ namespace HJPT.Services
                 query.ContainsKey("uploaded") &&
                 query.ContainsKey("left") &&
                 query["passkey"].ToString().Length == 32))
-                return;
+                return null;
 
             var infohash = DecodeToHex(query["info_hash"]);
-            if (infohash.Length != 40) return;
+            if (infohash.Length != 40) return null;
 
             var peerstr = query["peer_id"].ToString();
             var head = peerstr.Substring(0, 16);
             //todo: check peer-id head client 
             var peerid = DecodeToHex(peerstr.Substring(16));
-            if (peerid.Length != 24) return;
+            if (peerid.Length != 24) return null;
 
             int port;
-            if (!int.TryParse(query["port"], out port) || port > 0xffff) return;
+            if (!int.TryParse(query["port"], out port) || port > 0xffff) return null;
             
             int rsize = 50;
             if (query.ContainsKey("numwant"))
@@ -61,14 +61,14 @@ namespace HJPT.Services
 
             int left=0;
             bool isSeeder;
-            if (!int.TryParse(query["left"], out left)) return;
+            if (!int.TryParse(query["left"], out left)) return null;
             isSeeder = left == 0;
 
             var user = await _userManager.FindUserByPassKey(query["passkey"]);
-            if (user == null) return;
+            if (user == null) return null;
 
             var torrent = _dbContext.Torrents.FirstOrDefault(t => t.InfoHash == infohash);
-            if (torrent == null) return;
+            if (torrent == null) return null;
 
             int peerNum;
             if (isSeeder)
@@ -95,7 +95,7 @@ namespace HJPT.Services
 
             int interval = 60, minInterval = 30;
 
-            var repDic = new BDictionary();
+            //var repDic = new BDictionary();
 
             string resstr = "d8:intervali" + interval + "e12:min intervali" + minInterval + "e8:complete" + torrent.Seeder + "e10:incomplete" + torrent.Leecher + "e5:peers";
 
@@ -114,10 +114,32 @@ namespace HJPT.Services
                 self = _dbContext.Peers.FirstOrDefault(p => p.TorrentId == torrent.Id && p.PeerId == peerid);
 
             if (self != null && (DateTimeOffset.Now - self.PrevAction).Minutes < minInterval)
-                return;
+                return null;
+
+
+            //todo: valid check
+
+            var evt = query["event"];
+
+            //started
+            if (self == null && evt == "start")
+            {
+                var peer = new Peer() {
+                    TorrentId = torrent.Id,
+                    //...
+                };
+                if (isSeeder) ++torrent.Seeder;
+                else ++torrent.Leecher;
+                await _dbContext.SaveChangesAsync();
+            }
+
+
 
 
             //Many works to do..
+
+
+            return resstr;
 
         }
 

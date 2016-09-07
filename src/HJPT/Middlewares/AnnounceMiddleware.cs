@@ -29,10 +29,10 @@ namespace HJPT.Middlewares
             }
 
 
-            _trackService.Accept(httpContext.Request);
+            var result = await _trackService.Accept(httpContext.Request);
 
             httpContext.Response.StatusCode = 200;
-            await httpContext.Response.WriteAsync("");
+            await httpContext.Response.WriteAsync(result);
             
         }
 
