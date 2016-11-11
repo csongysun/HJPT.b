@@ -2,8 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using HJPT.Models;
-using Microsoft.AspNetCore.Identity;
+using Csys.Identity;
 
 namespace HJPT.Controllers
 {
@@ -11,9 +10,9 @@ namespace HJPT.Controllers
     [Authorize]
     public class UserSettingController : Controller
     {
-        private UserManager<ApplicationUser> _userManager;
+        private UserManager _userManager;
         public UserSettingController(
-            UserManager<ApplicationUser> userManager
+            UserManager userManager
             )
         {
             _userManager = userManager;
@@ -22,10 +21,10 @@ namespace HJPT.Controllers
         [HttpGet]
         public async Task<IActionResult> UpdatePassKey()
         {
-            var user = await _userManager.GetUserAsync(User);
-            user.PassKey = Guid.NewGuid().ToString();
-            await _userManager.UpdateAsync(user);
-            return Ok();
+            var result = await _userManager.UpdatePassKeyAsync(User.Identity.Name);
+            if(result.Succeeded)
+                return Ok();
+            return NotFound(result.Errors);
         }
 
     }

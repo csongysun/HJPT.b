@@ -7,8 +7,8 @@ namespace HJPT.Models
 {
     public class Invite : Entity
     {
-        public ApplicationUser Inviter { get; set; }
-        public ApplicationUser Invitee { get; set; }
+        public User Inviter { get; set; }
+        public User Invitee { get; set; }
         public string Hash { get; set; }
         public DateTimeOffset? InvitedTime { get; set; }
     }

@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using HJPT.Models;
-using Microsoft.AspNetCore.Http.Authentication;
-using HJPT.Common;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Identity;
 using HJPT.Options;
+using Csys.Identity;
+using Csys.Common;
 
 namespace HJPT.Controllers
 {
@@ -21,38 +16,35 @@ namespace HJPT.Controllers
     [Authorize]
     public class AuthController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager _user;
         private ILogger _logger;
-        private readonly JsonSerializerSettings _serializerSettings;
         private SiteOptions _siteOptions;
 
         public AuthController(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
+            UserManager user,
             ILoggerFactory loggerFactory,
             IOptions<SiteOptions> setting)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-
+            _user = user;
             _siteOptions = setting.Value;
-
             _logger = loggerFactory.CreateLogger<AuthController>();
         }
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody]LoginForm form)
+        public async Task<IActionResult> Login([FromBody]LoginModel model)
         {
-            var result = await _signInManager.PasswordSignInAsync(form.UserName, form.Password, isPersistent: true, lockoutOnFailure: true);
+            if (model == null || !ModelState.IsValid)
+                return BadRequest(new[] {ErrorDescriber.ModelNotValid});
+
+            var result = await _user.PasswordSignInAsync(model.UserName, model.Password);
             if (result.Succeeded)
             {
-                var u = await _userManager.FindByNameAsync(form.UserName);
-                u.LastIP = Request.Host.Host;
-                await _userManager.UpdateAsync(u);
-                _logger.LogInformation($"User ({form.UserName}) log in");
-                return Json( await _userManager.FindByNameAsync(form.UserName));
+                // var u = await _user.FindByEmailAsync(model.UserName);
+                // u.LastIP = Request.Host.Host;
+                // await _user.UpdateAsync(u);
+                _logger.LogInformation($"User ({model.UserName}) log in");
+                return Ok(result.Obj);
             }
 
             return BadRequest("用户名或密码错误");
@@ -60,53 +52,36 @@ namespace HJPT.Controllers
 
         [HttpPost("signup")]
         [AllowAnonymous]
-        public async Task<IActionResult> SignUp([FromBody]SignUpForm form)
+        public async Task<IActionResult> SignUp([FromBody]SignUpModel model)
         {
-            if (_siteOptions.SignUp == SignUpOption.Reject)
-                return BadRequest();
-            var user = new ApplicationUser { UserName = form.UserName, Email = form.Email, StuID = form.StuID, RegIP = Request.Host.Host };
-            var task = _userManager.CreateAsync(user, form.Password);
-            var result = await task;
+            if (_siteOptions.SignUp == SignUpOption.Reject || model == null || !ModelState.IsValid)
+                return BadRequest(new[] {ErrorDescriber.ModelNotValid});
+
+            var user = new User { UserName = model.UserName, Email = model.Email, StuID = model.StuID, RegIP = Request.Host.Host };
+            var result = await _user.CreateAsync(model, Request.Host.Host);
             if (result.Succeeded)
             {
-                await _signInManager.SignInAsync(user);
-                return Json( await _userManager.FindByNameAsync(user.UserName));
+                return NoContent();
             }
-            return BadRequest(task.Result.Errors);
+            return BadRequest(result.Errors);
         }
 
         [HttpPost("signup/invite")]
         [AllowAnonymous]
-        public async Task<IActionResult> InviteSignUp([FromBody]SignUpForm form)
+        public async Task<IActionResult> InviteSignUp([FromBody]SignUpModel form)
         {
             if (_siteOptions.SignUp != SignUpOption.Invite || form.InviteToken == null)
                 return BadRequest();
-
-            //valitade token
-
+            //Todo: valitade invite token
             return await SignUp(form);
         }
 
-
         [HttpGet("signout")]
-        public async Task<IActionResult> SignOut()
+        public IActionResult SignOut()
         {
-            await _signInManager.SignOutAsync();
+            //Todo: signout
+            _user.SignOutAsync(this.User.Identity.Name).RunSynchronously();
             return Ok();
-        }
-
-        [HttpGet("get")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Get()
-        {
-            return await Task.FromResult( (IActionResult) Json(_siteOptions.SignUp));
-        }
-
-        [HttpGet("set")]
-        public async Task<IActionResult> Set()
-        {
-            _siteOptions.SignUp = SignUpOption.Open;
-            return await Task.FromResult((IActionResult)Json(_siteOptions.SignUp));
         }
 
     }

@@ -382,7 +382,7 @@ namespace BencodeNET
                 {
                     key = DecodeString(stream, encoding);
                 }
-                catch (InvalidDataException ex)
+                catch (InvalidDataException)
                 {
                     throw new InvalidDataException();
                 }

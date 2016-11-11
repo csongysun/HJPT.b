@@ -11,14 +11,13 @@ namespace HJPT.Models
 
     }
 
-    public class LoginForm
+    public class LoginModel
     {
         public string UserName { get; set; }
         public string Password { get; set; }
-
     }
 
-    public class SignUpForm
+    public class SignUpModel
     {
         public string UserName { get; set; }
         public string Password { get; set; }
@@ -28,7 +27,7 @@ namespace HJPT.Models
 
     }
 
-    public class UploadForm
+    public class UploadModel
     {
         public bool Anonymous { get; set; }
         public string IMDbUrl { get; set; }
@@ -38,5 +37,10 @@ namespace HJPT.Models
         public IFormFile torrent { get; set; }
     }
 
+    public class TopicRequestModel{
+        public int Page { get; set; }
+        public int Count { get; set; }
+        public int Filter { get; set; }
+    }
 
 }

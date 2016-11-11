@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using BencodeNET.Objects;
 
 namespace HJPT.Models
 {
@@ -15,6 +14,8 @@ namespace HJPT.Models
         public int Seeder { get; set; }
         public int Leecher { get; set; }
 
+        [Ignore]
+        public TorrentFile TorrentFile { get; set; }
     }
 
     public class TorrentSubFile : Entity

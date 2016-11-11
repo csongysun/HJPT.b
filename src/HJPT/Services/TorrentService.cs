@@ -8,23 +8,25 @@ using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
+using Csys.Common;
 
 namespace HJPT.Services
 {
-    public interface ITorrentService
+    public interface ITorrentManager
     {
-        Task<Torrent> SetTorrent(Stream stream);
-        Task SaveToFile(string path, string filename);
+        Task<Torrent> ReadTorrent(Stream stream);
+        Task SaveToFile(string path, TorrentFile torrentFile, string filename);
+        Stream ReadTorrentFile(string torrentId, string passKey);
 
     }
 
-    public class TorrentService : ITorrentService
+    public class TorrentManager : ITorrentManager
     {
-        private TorrentFile torrentObj;
 
-        public Task<Torrent> SetTorrent(Stream stream)
+
+        public Task<Torrent> ReadTorrent(Stream stream)
         {
-            torrentObj = Bencode.DecodeTorrentFile(stream);
+            var torrentObj = Bencode.DecodeTorrentFile(stream);
             var torrent = new Torrent();
 
             IBObject files;
@@ -64,26 +66,30 @@ namespace HJPT.Services
             torrentObj.Announce = "http://localhost:2235/api/announce/";
             torrent.Size = size;
             torrent.InfoHash = torrentObj.CalculateInfoHash();
+            torrent.TorrentFile = torrentObj;
 
             return Task.FromResult(torrent);
         }
 
-        public Task<MemoryStream> SaveToMemoryStream()
-        {
-            var stream = new MemoryStream();
-            torrentObj.EncodeToStream(stream);
-            return Task.FromResult(stream);
+        public Stream ReadTorrentFile(string torrentId, string passKey){
+            TorrentFile tf = Bencode.DecodeTorrentFile($"Data/Torrents/{torrentId}.torrent");
+            tf.Announce += $"?passkey={passKey}";
+            return tf.EncodeToStream(new MemoryStream());
         }
 
-        public async Task SaveToFile(string path, string filename)
+        public async Task SaveToFile(string path, TorrentFile torrentFile, string filename)
         {
             using (FileStream fs = File.Create(filename))
             {
-                torrentObj.EncodeToStream(fs);
+                torrentFile.EncodeToStream(fs);
                 await fs.FlushAsync();
             }
         }
 
+        public TaskResult FindTorrentByID(string id)
+        {
+            return EntityResult.EntityNotFound;
+        }
     }
 
 }

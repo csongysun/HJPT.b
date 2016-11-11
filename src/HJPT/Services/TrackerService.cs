@@ -3,10 +3,10 @@ using HJPT.Data;
 using HJPT.Models;
 using Microsoft.AspNetCore.Http;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Csys.Identity;
 
 namespace HJPT.Services
 {
@@ -17,19 +17,19 @@ namespace HJPT.Services
 
     public class TrackService : ITrackService
     {
-        private readonly UserManager _userManager;
+        private readonly UserManager _user;
         private readonly ApplicationDbContext _dbContext;
         public TrackService(UserManager userManager, ApplicationDbContext dbContext)
         {
-            _userManager = userManager;
+            _user = userManager;
             _dbContext = dbContext;
         }
 
+        //Todo: tracker accept
         public async Task<string> Accept(HttpRequest req)
         {
             //todo: check agent client 
             
-
             var query = req.Query;
             if (!(query.ContainsKey("info_hash") &&
                 query.ContainsKey("passkey") &&
@@ -43,7 +43,7 @@ namespace HJPT.Services
 
             var infohash = DecodeToHex(query["info_hash"]);
             if (infohash.Length != 40) return null;
-
+            
             var peerstr = query["peer_id"].ToString();
             var head = peerstr.Substring(0, 16);
             //todo: check peer-id head client 
@@ -64,7 +64,7 @@ namespace HJPT.Services
             if (!int.TryParse(query["left"], out left)) return null;
             isSeeder = left == 0;
 
-            var user = await _userManager.FindUserByPassKey(query["passkey"]);
+            var user = await _user.FindUserByPassKey(query["passkey"]);
             if (user == null) return null;
 
             var torrent = _dbContext.Torrents.FirstOrDefault(t => t.InfoHash == infohash);
@@ -132,9 +132,6 @@ namespace HJPT.Services
                 else ++torrent.Leecher;
                 await _dbContext.SaveChangesAsync();
             }
-
-
-
 
             //Many works to do..
 

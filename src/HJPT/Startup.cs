@@ -1,32 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using HJPT.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System;
 using HJPT.Data;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using HJPT.Options;
 using HJPT.Services;
 using HJPT.Middlewares;
+using Csys.Identity;
 
 namespace HJPT
 {
     public class Startup
     {
 
-        private const string SecretKey = "HHHHHHHHHHHHHHHHH";   //get it from secure location
         private readonly SymmetricSecurityKey _signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(SecretKey));
 
         public Startup(IHostingEnvironment env)
@@ -49,20 +41,8 @@ namespace HJPT
             var connection = @"Server=(localdb)\mssqllocaldb;Database=HJPTDb;Trusted_Connection=True;";
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connection));
 
-            services.AddIdentity<ApplicationUser, IdentityRole>( options => {
-                options.Cookies.ApplicationCookie.AuthenticationScheme = "token";
-                options.Password.RequiredLength = 3;
-                options.Password.RequireUppercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireLowercase = false;
-                //options.to
-            })
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddUserManager<UserManager>()
-                .AddDefaultTokenProviders();
-
             services.AddTransient<ITrackService, TrackService>();
-            services.AddSingleton<ITorrentService, TorrentService>();
+            services.AddSingleton<ITorrentManager, TorrentManager>();
             services.AddOptions();
             services.Configure<SiteOptions>(Configuration.GetSection("SiteSetting"));
 
@@ -81,7 +61,28 @@ namespace HJPT
             
             app.UseAnnounce();
 
-            app.UseIdentity();
+            var signingKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Configuration.GetSection("JwtOptions").GetValue<string>("SecretKey")));
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                // The signing key must match!
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = signingKey,
+
+                // Validate the JWT Issuer (iss) claim
+                ValidateIssuer = true,
+                ValidIssuer = Configuration.GetSection("JwtOptions").GetValue<string>("Issuer"),
+
+                // Validate the JWT Audience (aud) claim
+                ValidateAudience = true,
+                ValidAudience = Configuration.GetSection("JwtOptions").GetValue<string>("Audience"),
+
+                // Validate the token expiry
+                ValidateLifetime = true,
+
+                // If you want to allow a certain amount of clock drift, set that here:
+                ClockSkew = TimeSpan.Zero
+            };
+            app.UseIdentity(tokenValidationParameters);
 
             app.UseMvc();
         }

@@ -13,4 +13,8 @@ namespace HJPT.Models
         }
         public string Id { get; set; }
     }
+
+    public class NEntity{
+        public int Id { get; set; }
+    }
 }
